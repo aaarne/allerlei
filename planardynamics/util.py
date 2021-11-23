@@ -39,7 +39,6 @@ def plot_pendulum_trajectory(pendulum, t, traj,
         ax.plot(correlate(delta[:, 0], delta[:, 0]))
         ax.plot(correlate(delta[:, 1], delta[:, 1]))
 
-
     if phase_plots:
         f, axes = plt.subplots(2, 2)
         for ax, a, b in [

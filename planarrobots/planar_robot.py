@@ -1,3 +1,5 @@
+from itertools import *
+
 import numpy as np
 from numpy import sin, cos
 from functools import reduce
@@ -27,10 +29,12 @@ class PlanarRobot(object):
         trafo[:, 2, 2] = 1.0
         return trafo
 
-    def link_trafos(self, joint_angles, up_to=None):
+    def link_trafos(self, joint_angles, up_to=None, include_base=False):
         if up_to is None:
             up_to = self.dof
-        return (self.__create_trafo(q, l) for _, q, l in zip(range(up_to), joint_angles, self._link_lengths))
+        g = (self.__create_trafo(q, l) for q, l in zip(joint_angles, self._link_lengths))
+        base = repeat(np.eye(3), 1 if include_base else 0)
+        return chain(base, islice(g, up_to))
 
     def endeffector_pose(self, joint_angles, up_to=None):
         return reduce(lambda x, y: x @ y, self.link_trafos(joint_angles, up_to=up_to))
