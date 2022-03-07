@@ -2,6 +2,8 @@ from .double_pendulum import DoublePendulum
 from .triple_pendulum import TriplePendulum
 from .pendulum import StopIntegration
 from .misc import sample_phi
+from .controllers import *
+from .util import plot_pendulum_trajectory
 
 from numpy import pi
 
