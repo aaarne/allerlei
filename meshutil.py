@@ -1,6 +1,6 @@
 import numpy as np
 from functools import reduce
-from .tools import Timer, TUMColors, TUMColor
+from . import Timer, TUMColors, TUMColor
 import pymesh
 
 
