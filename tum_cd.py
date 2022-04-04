@@ -63,6 +63,8 @@ class TUMColors:
     TUMAccentLightBlue = TUMColor('#98C6EA')
     TUMAccentBlue = TUMColor('#64A0C8')
     LightBlue = TUMColor('#3384ca')
+    Red = TUMColor('#FF0000')
+    Magenta = TUMColor('#FF00FF')
 
     @staticmethod
     def hextofloats(h):
@@ -77,6 +79,8 @@ class TUMColors:
             cls.TUMDarkGray,
             cls.TUMAccentLightBlue,
             cls.TUMAccentGreen,
+            cls.Red,
+            cls.Magenta
         ]))
 
     @staticmethod

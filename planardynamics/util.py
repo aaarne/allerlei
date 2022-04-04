@@ -11,6 +11,7 @@ def plot_pendulum_trajectory(pendulum, t, traj,
                              plot_fkin=False,
                              auto_corr=False,
                              streamer=None,
+                             animation_destination=None,
                              q0=None,
                              **kwargs):
     n = pendulum.dof
@@ -101,6 +102,8 @@ def plot_pendulum_trajectory(pendulum, t, traj,
         ax.plot(link_fkin[:, i, 0], link_fkin[:, i, 1], alpha=.3)
     plot = RobotPlot(ax, f=f)
     anim = plot.animated_trajectory(pendulum, q, t=t, streamer=streamer)
+    if animation_destination is not None:
+        anim.save(f"{animation_destination}.gif", writer='imagemagick', fps=30)
     _animations.append(anim)
     figures.append(f)
 
