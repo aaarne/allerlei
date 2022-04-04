@@ -115,7 +115,7 @@ class RobotPlot:
             yield get_point_on_chain(i), get_point_on_chain(i + 1)
 
     def plot_robot(self, robot, q, color=None, other_color=None, plot_jacobian=False, equal_aspect=True, dot_size=50,
-                   manual_lim=None, full_lim=False, exclude_arm=False, endeffector=True, **kwargs):
+                   manual_lim=None, keep_lim=False, full_lim=False, exclude_arm=False, endeffector=True, show_joints=True,  **kwargs):
         if color is None:
             color = TUMColors.TUMBlue
             if other_color is None:
@@ -126,9 +126,10 @@ class RobotPlot:
         if not exclude_arm:
             for p1, p2 in self._create_line_segments(robot, q):
                 self.ax.plot([p1[0], p2[0]], [p1[1], p2[1]], c=color, **kwargs)
-                self.ax.scatter(p2[0], p2[1], c=other_color, s=dot_size)
+                if show_joints:
+                    self.ax.scatter(p2[0], p2[1], c=other_color, s=dot_size)
 
-        if manual_lim is None:
+        if manual_lim is None and not keep_lim:
             if full_lim:
                 lim = robot.forward_kinematics(np.zeros(robot.number_of_joints))[0, 0]
                 lim *= 5 / 4
@@ -140,13 +141,14 @@ class RobotPlot:
                 offset = 1 / 6 * (lim_max - lim_min)
                 # self.ax.set_xlim((lim_min - offset, lim_max + offset))
                 # self.ax.set_ylim((lim_min - offset, lim_max + offset))
-        else:
+        elif manual_lim is not None:
             self.ax.set_xlim(manual_lim[0])
             self.ax.set_ylim(manual_lim[1])
 
         if equal_aspect:
             self.ax.set_aspect('equal')
-        self.ax.scatter(0, 0, c=other_color, s=dot_size)
+        if show_joints:
+            self.ax.scatter(0, 0, c=other_color, s=dot_size)
         if endeffector:
             self.plot_endeffector(robot.endeffector_pose(q), color=other_color, **kwargs)
 
