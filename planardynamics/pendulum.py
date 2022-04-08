@@ -126,8 +126,17 @@ class Pendulum(PlanarRobot):
             r.integrate(r.t + dt_t)
             yield r.t, r.y
 
-    def sim(self, q0, dq0, dt, controller=None, t_max=100, dt_sigma=None, print_progress=False,
-            controllers=None, stop_integration_observer=None, return_controller_history=False):
+    def sim(self, q0, dq0, dt,
+            controller=None,
+            t_max=100,
+            dt_sigma=None,
+            print_progress=False,
+            controllers=None,
+            stop_integration_observer=None,
+            detect_cycle_closure=False,
+            closure_threshold=1e-3,
+            closure_speed_threshold=None,
+            return_controller_history=False):
         if controller is not None:
             if controllers is None:
                 controllers = [controller]
@@ -147,6 +156,16 @@ class Pendulum(PlanarRobot):
             if stop_integration_observer:
                 if stop_integration_observer(t, q, dq):
                     break
+
+            if detect_cycle_closure:
+                if t > 0.1:
+                    if np.linalg.norm(q - q0) < closure_threshold:
+                        if closure_speed_threshold:
+                            if np.linalg.norm(dq) < closure_speed_threshold:
+                                break
+                        else:
+                            break
+
             hist.append(state)
             thist.append(t)
             if return_controller_history:

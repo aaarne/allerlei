@@ -63,10 +63,10 @@ class _Curve:
         dt = 1e-3
         mi, ma = self.range
         ho = order >> 1
-        if t - ho*dt < mi:
-            tprime = t + ho*dt
-        elif t + ho*dt > ma:
-            tprime = t - ho*dt
+        if t - ho * dt < mi:
+            tprime = t + ho * dt
+        elif t + ho * dt > ma:
+            tprime = t - ho * dt
         else:
             tprime = t
         return scipy.misc.derivative(self.__call__, tprime, dx=dt)
@@ -147,6 +147,10 @@ class ClosedCurve(_Curve):
             p[-1, :] = points[0, :]
         al = arclength_parametrization(p)
         super().__init__(p, 2 * np.pi * al / al[-1])
+
+    def resample(self, n):
+        sample_points = np.linspace(0, self._parameters[-1], n, endpoint=False)
+        return self.query(sample_points)
 
 
 class Curve(_Curve):
