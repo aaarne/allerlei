@@ -13,14 +13,26 @@ def Euclidean(x):
         raise ValueError
 
 
-def compute_length(start, end, metric, resolution=1e-3):
+def compute_length(start, end, metric, resolution=1e-3, steps=None):
     """
     Compute length of straight (Euclidean straightness) line segments given a Riemannian metric
     """
     d = end - start
-    steps = np.ceil(np.linalg.norm(d) / resolution)
-    vector = d / steps
-    points = np.array([start + t * d for t in np.linspace(0, 1, int(steps))])
-    elements = np.einsum("i,nij,j->n", vector, metric(points), vector)
-    elements[(elements < 0) & (elements > -1e-12)] = 0.0
-    return np.sum(np.sqrt(elements))
+
+    def finite_sum(n):
+        vector = d / n
+        points = np.array([start + t * d for t in np.linspace(0, 1, int(n))])
+        elements = np.einsum("i,nij,j->n", vector, metric(points), vector)
+        elements[(elements < 0) & (elements > -1e-12)] = 0.0
+        return np.sum(np.sqrt(elements))
+
+    if resolution and steps:
+        raise ValueError
+    elif resolution:
+        steps = np.ceil(np.linalg.norm(d) / resolution)
+        return finite_sum(steps)
+    elif steps:
+        return finite_sum(steps)
+    else:
+        m = metric(start + 0.5 * d)
+        return np.sqrt(d.transpose() @ m @ d)

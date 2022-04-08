@@ -1,5 +1,4 @@
-from .lines import ParametricCurve
-from .lines import Curve as ArcLengthParametrizedCurve
+from .lines import ParametricCurve, Curve
 from .numjac import *
 from .pcdexport import PCDExporter
 from .triangulate_unit_disk import *

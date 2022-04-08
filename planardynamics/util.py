@@ -108,3 +108,5 @@ def plot_pendulum_trajectory(pendulum, t, traj,
     figures.append(f)
 
     return figures
+
+

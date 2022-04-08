@@ -104,7 +104,6 @@ class Progressbar:
                 f()
 
 
-
 def progressify(iterable, n=None):
     if n is None:
         n = len(iterable)
@@ -113,6 +112,10 @@ def progressify(iterable, n=None):
         for value in iterable:
             yield value
             bar()
+
+
+def prange(n):
+    return progressify(range(n), n=n)
 
 
 def plot_histogram(e, bins=100):
@@ -259,5 +262,3 @@ class LegendEntries:
     @staticmethod
     def patch(facecolor, label, **kwargs):
         return Patch(facecolor=facecolor, label=label, **kwargs)
-
-

@@ -1,6 +1,10 @@
 import numpy as np
+from warnings import warn
+
+import scipy.misc
 from scipy.interpolate import interp1d
 from scipy.spatial.kdtree import KDTree
+from scipy.misc import derivative
 
 
 def arclength_parametrization(line):
@@ -9,21 +13,20 @@ def arclength_parametrization(line):
     return np.cumsum(length_elements)
 
 
-class Curve:
-    def __init__(self, line, mode='arclength'):
+class _Curve:
+    def __init__(self, line, parameters):
         self._points = line
         n = line.shape[1]
         self._dims = n
+        self._parameters = parameters
         self._arclength = arclength_parametrization(line)
-        if mode == 'arclength':
-            self._parameters = self._arclength
-        elif mode == 'unit':
-            self._parameters = self._arclength / self._arclength[-1]
         self._interpolators = [interp1d(self._parameters, self._points[:, i]) for i in range(n)]
         self._kdtree = KDTree(line)
 
     def __call__(self, t):
         if isinstance(t, (float, int)):
+            if t > np.max(self._parameters):
+                warn(f"{t} exceeds parameters domain")
             return np.array([
                 f(t) for f in self._interpolators
             ])
@@ -38,12 +41,46 @@ class Curve:
     def query(self, t):
         return self(t)
 
+    def distance(self, point):
+        _, on_line = self.retract(point)
+        return np.linalg.norm(on_line - point)
+
+    def compute_riemannian_length(self, metric, res=None):
+        from .riemann import compute_length
+        N = self._points.shape[0]
+        lens = np.zeros(N - 1)
+        for i, j in zip(range(0, N), range(1, N)):
+            lens[i] = compute_length(self._points[i, :], self._points[j, :], metric, resolution=res)
+
+        return np.sum(lens)
+
+    def retract(self, point):
+        t = self.parameterize(point)
+        return t, self(t)
+
+    def derivative(self, t):
+        order = 5
+        dt = 1e-3
+        mi, ma = self.range
+        ho = order >> 1
+        if t - ho*dt < mi:
+            tprime = t + ho*dt
+        elif t + ho*dt > ma:
+            tprime = t - ho*dt
+        else:
+            tprime = t
+        return scipy.misc.derivative(self.__call__, tprime, dx=dt)
+
+    def tangent(self, t):
+        d = self.derivative(t)
+        return d / np.linalg.norm(d)
+
     def parameterize(self, point, func=lambda x: x):
         p = func(self._parameters)
         if len(point.shape) == 1:
             d, i = self._kdtree.query(point, k=2)
             w = np.reciprocal(d)
-            return (p[i[0]]*w[0] + p[i[1]]*w[1]) / (w[0] + w[1])
+            return (p[i[0]] * w[0] + p[i[1]] * w[1]) / (w[0] + w[1])
         elif len(point.shape) == 2 and point.shape[1] == self._dims:
             d, i = self._kdtree.query(point, k=2)
             w = np.reciprocal(d)
@@ -88,9 +125,35 @@ class Curve:
         return iter(self._points)
 
 
-class ParametricCurve(Curve):
+class ParametricCurve(_Curve):
     def __init__(self, line):
-        super().__init__(line, mode='unit')
+        al = arclength_parametrization(line)
+        super().__init__(line, al / al[-1])
+
+
+class ArcLengthParametrizedCurve(_Curve):
+    def __init__(self, line):
+        al = arclength_parametrization(line)
+        super().__init__(line, al)
+
+
+class ClosedCurve(_Curve):
+    def __init__(self, points):
+        if np.linalg.norm(points[0, :] - points[-1, :]) < 1e-12:
+            p = points
+        else:
+            p = np.zeros((points.shape[0] + 1, points.shape[1]))
+            p[0:-1, :] = points
+            p[-1, :] = points[0, :]
+        al = arclength_parametrization(p)
+        super().__init__(p, 2 * np.pi * al / al[-1])
+
+
+class Curve(_Curve):
+    def __init__(self, line, params=None):
+        if params is None:
+            params = arclength_parametrization(line)
+        super().__init__(line, params)
 
 
 def discrete_zero_crossing(x, y, target=0.0):
