@@ -38,6 +38,9 @@ class _Curve:
 
             return result
 
+    def _get_adjacent_points(self, i, j):
+        return self._points[i, :], self._points[j, :]
+
     def query(self, t):
         return self(t)
 
@@ -50,7 +53,7 @@ class _Curve:
         N = self._points.shape[0]
         lens = np.zeros(N - 1)
         for i, j in zip(range(0, N), range(1, N)):
-            lens[i] = compute_length(self._points[i, :], self._points[j, :], metric, resolution=res)
+            lens[i] = compute_length(*self._get_adjacent_points(i, j), metric, resolution=res)
 
         return np.sum(lens)
 
