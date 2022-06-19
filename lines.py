@@ -4,7 +4,6 @@ from warnings import warn
 import scipy.misc
 from scipy.interpolate import interp1d
 from scipy.spatial.kdtree import KDTree
-from scipy.misc import derivative
 
 
 def arclength_parametrization(line):
@@ -14,32 +13,68 @@ def arclength_parametrization(line):
 
 
 class _Curve:
-    def __init__(self, line, parameters):
+    def __init__(self, line, parameters, lazy=True):
         self._points = line
         n = line.shape[1]
         self._dims = n
         self._parameters = parameters
         self._arclength = arclength_parametrization(line)
-        self._interpolators = [interp1d(self._parameters, self._points[:, i]) for i in range(n)]
-        self._kdtree = KDTree(line)
+        if lazy:
+            self._kdt = None
+            self._ints = None
+        else:
+            self._kdt = KDTree(line)
+            self._ints = self._create_interpolators()
+
+    @property
+    def _interpolators(self):
+        if self._ints is None:
+            self._ints = self._create_interpolators()
+        return self._ints
+
+    def override_points(self, new_points):
+        assert new_points.shape == self._points.shape, f"New shape: {new_points.shape}, old shape: {self._points.shape}"
+        self._points = new_points
+
+    @property
+    def _kdtree(self):
+        if self._kdt is None:
+            self._kdt = KDTree(self._points)
+        return self._kdt
+
+    def _create_interpolators(self):
+        return [interp1d(self._parameters, self._points[:, i]) for i in range(self._dims)]
+
+    def _query_single(self, t):
+        return np.array([
+            f(t) for f in self._interpolators
+        ])
+
+    def _query_vectorized(self, t):
+        result = np.empty((t.shape[0], self._dims))
+
+        for i, f in enumerate(self._interpolators):
+            result[:, i] = f(t)
+
+        return result
 
     def __call__(self, t):
         if isinstance(t, (float, int)):
             if t > np.max(self._parameters):
                 warn(f"{t} exceeds parameters domain")
-            return np.array([
-                f(t) for f in self._interpolators
-            ])
+            return self._query_single(t)
         else:
-            result = np.empty((t.shape[0], self._dims))
+            return self._query_vectorized(t)
 
-            for i, f in enumerate(self._interpolators):
-                result[:, i] = f(t)
+    def adjacent_points(self, i, j):
+        return self._points[i, :], self._points[i, :] + self.difference_vector(i, j)
 
-            return result
+    def difference_vector(self, i, j):
+        return self._points[j, :] - self._points[i, :]
 
-    def _get_adjacent_points(self, i, j):
-        return self._points[i, :], self._points[j, :]
+    def unit_difference_vector(self, i, j):
+        d = self.difference_vector(i, j)
+        return d/np.linalg.norm(d)
 
     def query(self, t):
         return self(t)
@@ -48,14 +83,17 @@ class _Curve:
         _, on_line = self.retract(point)
         return np.linalg.norm(on_line - point)
 
-    def compute_riemannian_length(self, metric, res=None):
-        from .riemann import compute_length
+    def compute_riemannian_length(self, metric=None, res=1e-3):
         N = self._points.shape[0]
         lens = np.zeros(N - 1)
         for i, j in zip(range(0, N), range(1, N)):
-            lens[i] = compute_length(*self._get_adjacent_points(i, j), metric, resolution=res)
+            lens[i] = self.riemannian_length_between_indices(metric, i, j, res=res)
 
         return np.sum(lens)
+
+    def riemannian_length_between_indices(self, metric, i, j, res=1e-3):
+        from .riemann import compute_length
+        return compute_length(*self.adjacent_points(i, j), metric, resolution=res)
 
     def retract(self, point):
         t = self.parameterize(point)
@@ -118,49 +156,76 @@ class _Curve:
 
     @property
     def shape(self):
-        return self._points.shape
+        return self.points.shape
 
     @property
     def points(self):
         return self._points
 
+    @property
+    def n_points(self):
+        return self.points.shape[0]
+
     def __iter__(self):
-        return iter(self._points)
+        return iter(self.points)
+
+    @property
+    def dimensions(self):
+        return self._dims
+
+    def plot(self, ax, *args, **kwargs):
+        ax.plot(self._points[:, 0], self._points[:, 1], *args, **kwargs)
 
 
 class ParametricCurve(_Curve):
-    def __init__(self, line):
+    def __init__(self, line, **kwargs):
         al = arclength_parametrization(line)
-        super().__init__(line, al / al[-1])
+        super().__init__(line, al / al[-1], **kwargs)
 
 
 class ArcLengthParametrizedCurve(_Curve):
-    def __init__(self, line):
+    def __init__(self, line, **kwargs):
         al = arclength_parametrization(line)
-        super().__init__(line, al)
+        super().__init__(line, al, **kwargs)
 
 
-class ClosedCurve(_Curve):
-    def __init__(self, points):
-        if np.linalg.norm(points[0, :] - points[-1, :]) < 1e-12:
-            p = points
-        else:
-            p = np.zeros((points.shape[0] + 1, points.shape[1]))
-            p[0:-1, :] = points
-            p[-1, :] = points[0, :]
-        al = arclength_parametrization(p)
-        super().__init__(p, 2 * np.pi * al / al[-1])
+class _ClosedCurve(_Curve):
+    def __init__(self, points, parameters, **kwargs):
+        super().__init__(points, parameters, **kwargs)
 
     def resample(self, n):
         sample_points = np.linspace(0, self._parameters[-1], n, endpoint=False)
         return self.query(sample_points)
 
+    def override_points(self, new_points):
+        assert new_points.shape == self.points.shape, f"New shape: {new_points.shape}, old shape: {self.points.shape}"
+        self._points[0:-1, :] = new_points
+        self._points[-1, :] = new_points[0, :]
+
+    @property
+    def points(self):
+        return self._points[0:-1, :]
+
+
+class ClosedCurve(_ClosedCurve):
+    def __init__(self, points, **kwargs):
+        if np.linalg.norm(points[0, :] - points[-1, :]) < 1e-12:
+            p = points
+        else:
+            print("Copying first point as last")
+            p = np.zeros((points.shape[0] + 1, points.shape[1]))
+            p[0:-1, :] = points
+            p[-1, :] = points[0, :]
+        al = arclength_parametrization(p)
+        params = 2 * np.pi * al / al[-1]
+        super().__init__(points, params, **kwargs)
+
 
 class Curve(_Curve):
-    def __init__(self, line, params=None):
+    def __init__(self, line, params=None, **kwargs):
         if params is None:
             params = arclength_parametrization(line)
-        super().__init__(line, params)
+        super().__init__(line, params, **kwargs)
 
 
 def discrete_zero_crossing(x, y, target=0.0):

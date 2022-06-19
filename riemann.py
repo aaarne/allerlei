@@ -19,6 +19,9 @@ def compute_length(start, end, metric, resolution=1e-3, steps=None):
     """
     d = end - start
 
+    if metric is None:
+        return np.linalg.norm(d)
+
     def finite_sum(n):
         vector = d / n
         points = np.array([start + t * d for t in np.linspace(0, 1, int(n))])

@@ -104,7 +104,10 @@ class Progressbar:
                 f()
 
 
-def progressify(iterable, n=None):
+def progressify(iterable, n=None, show=True):
+    if not show:
+        return iterable
+
     if n is None:
         n = len(iterable)
 
