@@ -36,6 +36,9 @@ class _Curve:
         assert new_points.shape == self._points.shape, f"New shape: {new_points.shape}, old shape: {self._points.shape}"
         self._points = new_points
 
+    def create_new(self, lazy=True):
+        return self.__class__(self._points, lazy=lazy)
+
     @property
     def _kdtree(self):
         if self._kdt is None:

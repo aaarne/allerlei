@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.lines as mlines
 from matplotlib.patches import Patch
+import datetime
 
 
 def create_hypercube(dim, resolution, exclude_end=False):
@@ -105,16 +106,16 @@ class Progressbar:
 
 
 def progressify(iterable, n=None, show=True):
-    if not show:
-        return iterable
-
     if n is None:
         n = len(iterable)
 
-    with Progressbar(n) as bar:
-        for value in iterable:
-            yield value
-            bar()
+    if show:
+        with Progressbar(n) as bar:
+            for value in iterable:
+                yield value
+                bar()
+    else:
+        yield from iterable
 
 
 def prange(n):
@@ -251,6 +252,10 @@ class MyMeshgrid:
     @property
     def indices(self):
         return np.arange(0, self.n)
+
+
+def timestamp():
+    return datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
 
 class LegendEntries:
