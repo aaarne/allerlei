@@ -4,7 +4,9 @@ from .pendulum import Pendulum
 
 
 class DoublePendulum(Pendulum):
-    def __init__(self, m1=1, m2=1, l1=1, l2=1, lc1=.5, lc2=.5, II1=1, II2=1, g=0, **kwargs):
+    def __init__(self, m1=1, m2=1, l1=1, l2=1, lc1=.5, lc2=.5, II1=1, II2=1, g=0, extra_params=None, **kwargs):
+        if extra_params is None:
+            extra_params = {}
         alpha = II1 + II2 + m1 * lc1 ** 2 + m2 * (l1 ** 2 + lc2 ** 2)
         beta = m2 * l1 * lc2
         delta = II2 + m2 * lc2 ** 2
@@ -37,7 +39,7 @@ class DoublePendulum(Pendulum):
 
         super().__init__(
             lengths=(l1, l2),
-            params=dict(m1=m1, m2=m2, l1=l1, l2=l2, lc1=lc1, lc2=lc2, II1=II1, II2=II2, g=g),
+            params={**dict(m1=m1, m2=m2, l1=l1, l2=l2, lc1=lc1, lc2=lc2, II1=II1, II2=II2, g=g), **extra_params},
             mass_fun=mass_matrix,
             cc_fun=coriolis_centrifugal,
             gravity_fun=gravity,

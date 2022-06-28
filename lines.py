@@ -1,5 +1,6 @@
 import numpy as np
 from warnings import warn
+from .riemann import compute_length
 
 import scipy.misc
 from scipy.interpolate import interp1d
@@ -95,7 +96,6 @@ class _Curve:
         return np.sum(lens)
 
     def riemannian_length_between_indices(self, metric, i, j, res=1e-3):
-        from .riemann import compute_length
         return compute_length(*self.adjacent_points(i, j), metric, resolution=res)
 
     def retract(self, point):
@@ -164,6 +164,9 @@ class _Curve:
     @property
     def points(self):
         return self._points
+
+    def __getitem__(self, item):
+        return self._points[item, :]
 
     @property
     def n_points(self):
