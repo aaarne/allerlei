@@ -218,7 +218,6 @@ class ClosedCurve(_ClosedCurve):
         if np.linalg.norm(points[0, :] - points[-1, :]) < 1e-12:
             p = points
         else:
-            print("Copying first point as last")
             p = np.zeros((points.shape[0] + 1, points.shape[1]))
             p[0:-1, :] = points
             p[-1, :] = points[0, :]

@@ -19,7 +19,7 @@ def compute_length(start, end, metric, resolution=1e-3, steps=None):
     """
     d = end - start
 
-    if metric is None:
+    if metric is None or metric.is_euclidean:
         return np.linalg.norm(d)
 
     def finite_sum(n):
@@ -29,12 +29,10 @@ def compute_length(start, end, metric, resolution=1e-3, steps=None):
         elements[(elements < 0) & (elements > -1e-12)] = 0.0
         return np.sum(np.sqrt(elements))
 
-    if resolution and steps:
-        raise ValueError
-    elif resolution:
-        steps = np.ceil(np.linalg.norm(d) / resolution)
+    if steps:
         return finite_sum(steps)
-    elif steps:
+    elif resolution and np.isfinite(resolution):
+        steps = np.ceil(np.linalg.norm(d) / resolution)
         return finite_sum(steps)
     else:
         m = metric(start + 0.5 * d)
