@@ -114,14 +114,6 @@ class PlanarRobot(object):
             j = raw
         return j
 
-    def mass(self, q, **kwargs):
-        if self.number_of_joints == 2:
-            return mass_2dof(q, l=np.array(self._link_lengths), **kwargs)
-        elif self.number_of_joints == 3:
-            return mass_3dof(q, l=np.array(self._link_lengths), **kwargs)
-        else:
-            raise NotImplementedError
-
     @property
     def number_of_joints(self):
         return len(self._link_lengths)

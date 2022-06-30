@@ -27,13 +27,11 @@ class RobotPlot:
         return transformed_points[:, 0], transformed_points[:, 1]
 
     def animated_trajectory(self, robot, traj, t=None, color=TUMColors.TUMBlue, othercolor=TUMColors.TUMOrange,
-                            interval=20, matthew=False, streamer=None, store_every_nth=None, text_function=None):
-        lim = robot.forward_kinematics(np.zeros(robot.number_of_joints))[0, 0]
-        lim *= 5 / 4
+                            interval=20, matthew=False, streamer=None, store_every_nth=None, text_function=None, lim=None):
+        if lim is None:
+            lim = robot.forward_kinematics(np.zeros(robot.number_of_joints))[0, 0]
+            lim *= 5 / 4
         self.ax.scatter(0, 0, c=othercolor)
-        self.ax.axis('equal')
-        self.ax.set_xlim((-lim, lim))
-        self.ax.set_ylim((-lim, lim))
 
         if matthew:
             import socket, struct
@@ -54,6 +52,10 @@ class RobotPlot:
         scatters = [self.ax.scatter(p2[0], p2[1], c=othercolor) for p1, p2 in
                     self._create_line_segments(robot, traj[0, :])]
         endeff_line = self.plot_endeffector(robot.endeffector_pose(traj[0, :]), color=color)[0]
+
+        self.ax.axis('equal')
+        self.ax.set_xlim((-lim, lim))
+        self.ax.set_ylim((-lim, lim))
 
         def animate(i):
             updated = list()

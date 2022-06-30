@@ -87,11 +87,18 @@ class _Curve:
         _, on_line = self.retract(point)
         return np.linalg.norm(on_line - point)
 
+    def distance_to_other_point_chain(self, other_points):
+        assert other_points.shape == self._points.shape
+        return np.linalg.norm(other_points - self._points)
+
     def compute_riemannian_length(self, metric=None, res=1e-3):
         N = self._points.shape[0]
         lens = np.zeros(N - 1)
         for i, j in zip(range(0, N), range(1, N)):
             lens[i] = self.riemannian_length_between_indices(metric, i, j, res=res)
+
+        for failed_idx in np.argwhere(np.isnan(lens)):
+            lens[failed_idx] = self.riemannian_length_between_indices(None, failed_idx, failed_idx+1)
 
         return np.sum(lens)
 
@@ -157,6 +164,12 @@ class _Curve:
         sample_points = np.linspace(0, self._parameters[-1], n)
         return self.query(sample_points)
 
+    def density_aware_resample(self, n):
+        return self.__class__(
+            self.points,
+            parameters=np.linspace(0, 1, self.n_points)
+        ).resample(n)
+
     @property
     def shape(self):
         return self.points.shape
@@ -214,7 +227,7 @@ class _ClosedCurve(_Curve):
 
 
 class ClosedCurve(_ClosedCurve):
-    def __init__(self, points, **kwargs):
+    def __init__(self, points, params=None, **kwargs):
         if np.linalg.norm(points[0, :] - points[-1, :]) < 1e-12:
             p = points
         else:
@@ -222,7 +235,8 @@ class ClosedCurve(_ClosedCurve):
             p[0:-1, :] = points
             p[-1, :] = points[0, :]
         al = arclength_parametrization(p)
-        params = 2 * np.pi * al / al[-1]
+        if params is None:
+            params = 2 * np.pi * al / al[-1]
         super().__init__(points, params, **kwargs)
 
 
