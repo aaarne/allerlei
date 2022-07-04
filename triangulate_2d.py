@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.spatial
-from .lines import ParametricCurve
+from gummiband.curves import ParametricCurve
 from .tools import all_combinations
 
 
