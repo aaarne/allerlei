@@ -7,7 +7,7 @@ from contextlib import contextmanager
 import numpy as np
 import pymesh
 
-from . import PCDExporter
+from .pcdexport import PCDExporter
 from . import TUMColors, TUMBlue
 
 
