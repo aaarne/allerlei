@@ -34,7 +34,7 @@ class Matthew:
                 mesh.set_attribute('color', c)
             pymesh.save_mesh(f.name, mesh, *mesh.get_attribute_names())
             command = self._command + ['--file', f.name]
-            print(f"Meshfile writte to {f.name}.")
+            print(f"Meshfile written to {f.name}.")
             (subprocess.Popen if self._async else subprocess.run)(command)
 
     def show_pointcloud(self, points, colors=None):
