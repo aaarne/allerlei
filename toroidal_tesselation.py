@@ -2,7 +2,7 @@ import numpy as np
 from scipy.spatial import Delaunay
 
 
-def create_toroidal_tesselation(resolution=20):
+def create_toroidal_tesselation(resolution=20, scaling=1, offset=0):
     x = np.arange(resolution + 1)
     y = np.arange(resolution + 1)
     xx, yy = np.meshgrid(x, y)
@@ -19,8 +19,7 @@ def create_toroidal_tesselation(resolution=20):
 
         for upper, lower in zip(upper_line, lower_line):
             faces[faces == upper] = lower
-
-    return points / resolution, faces
+    return (points * scaling/resolution) + offset, faces
 
 
 def parametric_torus(uv, c=3, a=1, compute_jacobian=False):
@@ -44,3 +43,12 @@ def parametric_torus(uv, c=3, a=1, compute_jacobian=False):
         return points, jac
     else:
         return points
+
+
+def create_2d_angular_torus(resolution, r1, r2):
+    p, f = create_toroidal_tesselation(resolution=resolution, scaling=2*np.pi, offset=-np.pi)
+    tp = parametric_torus(p, c=r1, a=r2)
+    import pymesh
+    torus = pymesh.form_mesh(tp, f)
+    torus, info = pymesh.remove_isolated_vertices(torus)
+    return p[info['ori_vertex_index']], torus
