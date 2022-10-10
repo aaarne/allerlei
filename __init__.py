@@ -6,3 +6,6 @@ from .numjac import *
 from itertools import *
 from more_itertools import *
 from functools import *
+
+import matplotlib.pyplot as plt
+plt.rcParams['svg.fonttype'] = 'none'
