@@ -33,6 +33,9 @@ def angular_dist(q0, q1):
         ((np.sin(a) - np.sin(b)) ** 2 + (np.cos(a) - np.cos(b)) ** 2 for a, b in zip(q0, q1))
     )
 
+def angular_difference(q1, q2):
+    return np.arctan2(np.sin(q1 - q2), np.cos(q1 - q2))
+
 
 def np_cartesian_product(a1, a2):
     return np.transpose([np.repeat(a1, len(a2)), np.tile(a2, len(a1))])
