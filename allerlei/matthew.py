@@ -12,8 +12,8 @@ from . import TUMColors, TUMBlue
 
 
 class Matthew:
-    def __init__(self, async=False, fullscreen=False, additional_data_folder=None, background_color=None):
-        self._async = async
+    def __init__(self, asyn=False, fullscreen=False, additional_data_folder=None, background_color=None):
+        self._async = asyn
         self._command = ['matthew']
         if fullscreen:
             self._command.append('--fs')
